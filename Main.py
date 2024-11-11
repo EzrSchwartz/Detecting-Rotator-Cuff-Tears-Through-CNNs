@@ -145,8 +145,6 @@ if __name__ == "__main__":
         for batch_idx, (data_input, labels) in tqdm(enumerate(Data_loader)):
             outputs = model(data_input)
 
-            loss = F.cross_entropy(outputs, labels)
-            loss.backward()
             optimizer = torch.optim.Adam(model.parameters(), lr=0.001)
             optimizer.step()
 
