@@ -19,7 +19,19 @@ def preProcessing(image_path):
     image_tensor = image_tensor.unsqueeze(0)  # Shape: (1, 50, 50)
     return image_tensor
 
-
+class TransferDataset(Dataset):
+    def __init__(self, data_dir):
+        self.data_dir = data_dir
+        self.image_paths = [os.path.join(data_dir, f) for f in os.listdir(data_dir) if f.endsiwth('.jpg')]
+    def __len__(self):
+        return len(self.image_paths)
+    def __getitem__(self,i):
+        image_path = self.image_paths[i]
+        image_tensor = preProcessing(image_path)
+        label = None
+        return image_tensor, label
+    
+    
 class CustomDataset(Dataset):
     def __init__(self, data_dir):
         self.data_dir = data_dir
@@ -28,17 +40,17 @@ class CustomDataset(Dataset):
     def __len__(self):
         return len(self.image_paths)
 
-    def __getitem__(self, idx):
-        image_path = self.image_paths[idx]
+    def __getitem__(self, i):
+        image_path = self.image_paths[i]
         image_tensor = preProcessing(image_path)
         if 'gl' in image_path:
             label = 1
-        elif 'me' in image_path:
-            label = 2
-        elif 'pi' in image_path:
-            label = 3
-        else:
+        elif 'no' in image_path:
             label = 0
+        else:
+            pass
+        
+
 
         return image_tensor, label
 
