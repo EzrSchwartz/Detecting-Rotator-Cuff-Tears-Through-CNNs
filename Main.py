@@ -223,3 +223,62 @@ if __name__ == "__main__":
     #         loss = F.cross_entropy(outputs, labels)
     #     print("Epoch:", epoch, "Loss:", loss.item())
     #     torch.save(model.state_dict(), f'/home/ezra/SciResearch/CNN-Labral-Tears/CNN-LabralTears/Models/model-epoch({epoch}).pthl.lll
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+# if __name__ == "__main__":
+
+#     imageDirectory = R"\\NASDA4788\Public\Data\Training\glioma"
+#     imageDirectory2 = R"\\NASDA4788\Public\Data\Training\glioma"
+
+#     dataset = CustomDataset(imageDirectory)
+#     dataset2 = CustomDataset(imageDirectory)
+#     print("Datasets Made")
+#     Data_loader = DataLoader(dataset, batch_size=1, shuffle=True)
+#     Data_loader2 = DataLoader(dataset2, batch_size=1, shuffle=True)
+#     for batch_idx, (data_input, labels) in enumerate(Data_loader):
+#         continue
+
+#     for batch_idx, (data_input, labels) in enumerate(Data_loader2):
+#         continue
+
+#     print("Data_loader2", len(Data_loader2))
+#     print("dataloader1", len(Data_loader))
+#     model = Brain2dCNN()
+#     model2 = Bran2d2CNN(model)
+#     print(model)
+#     numEpoch = 11
+
+#     for epoch in tqdm(range(numEpoch)):
+#         for batch_idx, (data_input, labels) in tqdm(enumerate(Data_loader)):
+#             outputs = model(data_input)
+
+#             optimizer = torch.optim.Adam(model.parameters(), lr=0.001)
+#             optimizer.step()
+
+#         if loss <= 0:
+#             for batch_idx, (data_input, labels) in enumerate(Data_loader2):
+#                 outputs = model(data_input)
+#                 loss = F.cross_entropy(outputs, labels)
+#                 print("Epoch:", epoch, "Loss:", loss.item())
+#                 torch.save(model.state_dict(),
+#                            f'\\Users\ezran\OneDrive\Desktop\Models\Modelepoch({epoch}).pth')
+#             loss = F.cross_entropy(outputs, labels)
+#         print("Epoch:", epoch, "Loss:", loss.item())
+#         torch.save(model.state_dict(),
+#                    f'\\Users\ezran\OneDrive\Desktop\Models\Modelepoch({epoch}).pth')
+
+
+
+
