@@ -7,38 +7,38 @@ from torch.utils.data import Dataset, DataLoader
 import tqdm
 from tqdm import tqdm
 
-def preProcessing(image_path):
-    image = Image.open(image_path)
-    image = image.convert('L')
-    image = image.resize((50, 50))
-    image_array = np.array(image)
-    image_array = image_array / 255.0
-    image_tensor = torch.tensor(image_array, dtype=torch.float32)
-    image_tensor = image_tensor.unsqueeze(0)  # Shape: (1, 50, 50)
-    return image_tensor
+# def preProcessing(image_path):
+#     image = Image.open(image_path)
+#     image = image.convert('L')
+#     image = image.resize((50, 50))
+#     image_array = np.array(image)
+#     image_array = image_array / 255.0
+#     image_tensor = torch.tensor(image_array, dtype=torch.float32)
+#     image_tensor = image_tensor.unsqueeze(0)  # Shape: (1, 50, 50)
+#     return image_tensor
 
-class CustomDataset(Dataset):
-    def __init__(self, data_dir):
-        self.data_dir = data_dir
-        self.image_paths = [os.path.join(data_dir, f) for f in os.listdir(data_dir) if f.endswith('.jpg')]
-
-    def __len__(self):
-        return len(self.image_paths)
-
-    def __getitem__(self, idx):
-        image_path = self.image_paths[idx]
-        image_tensor = preProcessing(image_path)
-        if 'gl' in image_path:
-            label = 1
-        elif 'me' in image_path:
-            label = 2
-        elif 'pi' in image_path:
-            label = 3
-        else:
-            label = 0
-
-        return image_tensor, label
-
+# class CustomDataset(Dataset):
+#     def __init__(self, data_dir):
+#         self.data_dir = data_dir
+#         self.image_paths = [os.path.join(data_dir, f) for f in os.listdir(data_dir) if f.endswith('.jpg')]
+#
+#     def __len__(self):
+#         return len(self.image_paths)
+#
+#     def __getitem__(self, idx):
+#         image_path = self.image_paths[idx]
+#         image_tensor = preProcessing(image_path)
+#         if 'gl' in image_path:
+#             label = 1
+#         elif 'me' in image_path:
+#             label = 2
+#         elif 'pi' in image_path:
+#             label = 3
+#         else:
+#             label = 0
+#
+#         return image_tensor, label
+#
 
 class Bran2d2CNN(nn.Module):
     def __init__(self, TransferModel):
@@ -121,18 +121,24 @@ class Convolutional_autoencoder(nn.Module):
             nn.Conv3d(in_channels=64, out_channels=64, kernel_size=(3, 3, 3), stride=(1, 1, 1)),
             nn.Conv3d(in_channels=64,out_channels=1,kernel_size=(3,3,1), stride=(1, 1, 1), padding=(0,0, 0))
             )
-            
-        
+
+    def _get_fc_input_size(self):
+        with torch.no_grad():
+            x = torch.randn(1, 1, 50, 50, 8)
+
+            return x.numel()
     def forward(self, x):
         x = self.encoder(x)
         return x
 
 #Architecture of best performing shoulder labral tear classification model using transferred weights
 class ShoulderClassificationmodel(nn.Module,):
-    def __init__(self,transferModel):
+    def __init__(self,TransferModel):
+        super(ShoulderClassificationmodel,self).__init__()
+        self.TransferModel = TransferModel
+        print( self.TransferModel._get_fc_input_size)
 
-        self.transferModel = transferModel()
-        self.conv1 = nn.Conv3d(in_channels= self.transferModel.fc_input_size, out_channels=64)
+        self.conv1 = nn.Conv3d(in_channels= self.TransferModel._get_fc_input_size, out_channels=64, kernel_size=(3,3,3))
         self.pool1 = nn.MaxPool3d(kernel_size= (2,2,2), stride= (2, 2, 2))
 
         self.conv2 = nn.Conv3d(in_channels= 64, out_channels= 64, kernel_size= (3, 3, 3),stride=(1,1,1),padding=(1,1,1))
@@ -153,7 +159,7 @@ class ShoulderClassificationmodel(nn.Module,):
 
             return x.numel()
     def forward(self, x):
-        x = self.transferModel(x)
+        x = self.TransferModel(x)
         x = self.conv1(x)
         x = F.relu(x)
         x = self.pool1(x)
