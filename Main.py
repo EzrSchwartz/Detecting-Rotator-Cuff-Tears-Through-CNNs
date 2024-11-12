@@ -1,7 +1,6 @@
 import torch
 import torch.nn as nn
 import torch.nn.functional as F
-from PIL import Image
 import numpy as np
 import os
 from torch.utils.data import Dataset, DataLoader
