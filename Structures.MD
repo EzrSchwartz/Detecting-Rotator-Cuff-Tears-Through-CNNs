@@ -19,3 +19,9 @@
     *Creates less of a gap between the transfer data and classification data but may have limited data*
     ----ResNet Classification Head attached to the Encoder of the Decoder Encoder Model
 ```
+
+***Unsupervised ResNet Training from Initialization***
+```
+----ResNet-50 to binary classification
+    *Possible overfitting of data*
+```
