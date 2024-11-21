@@ -27,6 +27,7 @@
     *Possible overfitting of data*
 ```
 
+***Unsupervised Clymer Random Initialization Model***
 ```
 ----Clymer Random Initialization Model
     *Possible overfitting of data*
