@@ -11,16 +11,6 @@ from tqdm import tqdm
 from Synthetic3dDataset import Random3DDataset
 from Clymer import randintModel, transferModelfrom Clymer import randintModel, transferModel
 from Datasets import shoulders, transfer, random
-# currently made for 2d images since that was what i was testing 
-# def preProcessing(image_path):
-#     image = Image.open(image_path)
-#     image = image.convert('L')
-#     image = image.resize((50, 50))
-#     image_array = np.array(image)
-#     image_array = image_array / 255.0
-#     image_tensor = torch.tensor(image_array, dtype=torch.float32)
-#     image_tensor = image_tensor.unsqueeze(0)  # Shape: (1, 50, 50)
-#     return image_tensor
 
 
 
@@ -111,7 +101,3 @@ if __name__ == "__main__":
 
 
     #     torch.save(model.state_dict(), f'Path to where we save the different versions of the transfer learning models')
-
-
-    randintModel(numEpoch, TransferDataLoader, ShoulderDataLoader, model2)
-    transferModel(numEpoch, TransferDataLoader, ShoulderDataLoader, model)
