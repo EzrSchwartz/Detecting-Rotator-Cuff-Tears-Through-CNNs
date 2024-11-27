@@ -1,13 +1,12 @@
 import torch
 import torch.nn as nn
 import torch.nn.functional as F
-from torch.utils.data import Dataset, DataLoader
 import numpy as np
 import os
 from PIL import Image
+from torch.utils.data import Dataset, DataLoader
 import tqdm
 from tqdm import tqdm
-
 
 #Copy of the top randomly initialized model architecture developed in the previous paper
 class RandomInitModelReplica(nn.Module):
@@ -34,6 +33,7 @@ class RandomInitModelReplica(nn.Module):
             x=self.pool2(x)
             return x.numel()
     def forward(self, x):
+        print(type(x))
         print(x.shape)
         x = self.conv1(x)
         print(f'conv1{x.shape}')
@@ -90,6 +90,7 @@ class Convolutional_autoencoder(nn.Module):
 
 
     def forward(self, x):
+        print(type(x))
         print(f"Input size: {x.size()}")
         x = self.conv1(x)
         print(f"Conv1 output size: {x.size()}")
@@ -184,36 +185,60 @@ class ShoulderClassificationmodel(nn.Module,):
 
 
 
-
-
-#Top Randinit Model from Clymer
-def randintModel(_numEpoch,_ShoulderDataLoader,_model):
+def randintModel(_numEpoch, _shoulderData):
     numEpoch = _numEpoch
-    ShoulderDataLoader = _ShoulderDataLoader
-    model = _model2
-    
+    shoulderData = _shoulderData
+    model = RandomInitModelReplica()
     for epoch in range(numEpoch):
-        for batch_idx, (data_input) in enumerate(ShoulderDataLoader):
-            optimizer = torch.optim.Adam(model2.parameters(), lr=0.001)
-            optimizer.step()
-            outputs = model2(data_input)
-            loss = F.cross_entropy(outputs, labels)
-            print("Epoch:", epoch, "Loss:", loss.item())
-            torch.save(model2.state_dict(), f'Path to where we save the models')
-
-
-
-#Transfer Model From Cymer
-def transferModel(numEpoch, TransferDataLoader,ShoulderDataLoader,model):
-    for epoch in range(numEpoch):
-        for batch_idx, (data_input) in enumerate(TransferDataLoader):
+        for (data_input) in enumerate(shoulderData):
             optimizer = torch.optim.Adam(model.parameters(), lr=0.001)
             optimizer.step()
+            torch.save(model.state_dict(), f'Path to where we save the models{epoch}')
 
+def transferModel(_numEpoch,_TransferDataLoader,_ShoulderDataLoader):
+    numEpoch = _numEpoch
+    TransferDataLoader = _TransferDataLoader
+    ShoulderDataLoader = _ShoulderDataLoader
+    model = Convolutional_autoencoder()
+    for epoch in range(numEpoch):
+        for batch_idx, (transfer_data, _) in enumerate(TransferDataLoader):
+            optimizer = torch.optim.Adam(model.parameters(), lr=0.001)
+            optimizer.zero_grad()
+        
+        # Forward pass through the autoencoder
+            _ = model(transfer_data)
+
+            optimizer.step()
+
+    # Now, use the trained autoencoder with the classification model
+            model2 = ShoulderClassificationmodel(model)
+            model2_optimizer = torch.optim.Adam(model2.parameters(), lr=0.001)
             for batch_idx, (data_input, labels) in enumerate(ShoulderDataLoader):
-                outputs = model(data_input)
-                loss = F.cross_entropy(outputs, labels)
-                print("Epoch:", epoch, "Loss:", loss.item())
-                torch.save(model.state_dict(), f'Path to where we save the models')
-            loss = F.cross_entropy(outputs, labels)
+                model2_optimizer.zero_grad()
 
+                outputs = model2(data_input)
+                loss = F.cross_entropy(outputs, labels)
+        
+                loss.backward()
+                model2_optimizer.step()
+
+                print("Epoch:", epoch, "Loss:", loss.item())
+                torch.save(model2.state_dict(), f'Path to where we save the models')
+
+
+    # numEpoch = _numEpoch
+    # TransferDataLoader = _TransferDataLoader
+    # ShoulderDataLoader = _ShoulderDataLoader
+    # model = Convolutional_autoencoder()
+    # for epoch in range(numEpoch):
+    #     for (data_input) in enumerate(TransferDataLoader):
+    #         optimizer = torch.optim.Adam(model.parameters(), lr=0.001)
+    #         optimizer.step()
+    #         print(model.parameters())
+    #         for (data_input, labels) in enumerate(ShoulderDataLoader):
+    #             model2 = ShoulderClassificationmodel(model)
+    #             outputs = model2(data_input)
+    #             loss = F.cross_entropy(outputs, labels)
+    #             print("Epoch:", epoch, "Loss:", loss.item())
+    #             torch.save(model2.state_dict(), f'Path to where we save the models')
+    #         loss = F.cross_entropy(outputs, labels)

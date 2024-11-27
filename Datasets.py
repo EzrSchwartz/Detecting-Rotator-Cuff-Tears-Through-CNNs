@@ -1,13 +1,8 @@
 import torch
-import torch.nn as nn
-import torch.nn.functional as F
 from torch.utils.data import Dataset, DataLoader
-import numpy as np
 import os
+import numpy as np
 from PIL import Image
-import tqdm
-from tqdm import tqdm
-
 
 
 class Random3DDataset(Dataset):
@@ -51,6 +46,21 @@ class Random3DDataset(Dataset):
     def __getitem__(self, idx):
         return self.data[idx], self.labels[idx]
 
+if __name__ == "__Datasets__":
+    # Create dataloader
+    dataset = Random3DDataset()
+
+    dataloader = DataLoader(dataset, batch_size=4, shuffle=True)
+    
+    # Example of accessing the data
+    for batch_idx, (data, labels) in enumerate(dataloader):
+        print(f"Batch {batch_idx}")
+        print(f"Data shape: {data.shape}")  # Should be (batch_size, 1, depth, height, width)
+        print(f"Labels: {labels}")
+        
+        if batch_idx == 0:  # Just print first batch
+            break
+
 
 class CustomDataset(Dataset):
     def __init__(self, data_dir):
@@ -69,8 +79,6 @@ class CustomDataset(Dataset):
             label = 0
 
         return image_tensor, label
-
-        
 class CustomDatasetUnsupervised(Dataset):
     def __init__(self, data_dir):
         self.data_dir = data_dir
@@ -85,3 +93,24 @@ class CustomDatasetUnsupervised(Dataset):
         
         return image_tensor
 
+
+
+
+def shoulders(Count):
+    dataset = CustomDatasetUnsupervised(R"Path to shoulder data directory")
+    dataloader = DataLoader(dataset, batch_size=1, shuffle=True)
+    for batch_idx, (data_input) in enumerate(dataloader):
+        if batch_idx == Count:
+            return dataloader
+def transfer(Count):
+    dataset = CustomDatasetUnsupervised(R"Path to transfer data directory")
+    dataloader = DataLoader(dataset, batch_size=1, shuffle=True)
+    for batch_idx, (data_input) in enumerate(dataloader):
+        if batch_idx == Count:
+            return dataloader
+def random(Count):
+    dataset = Random3DDataset()
+    dataloader = DataLoader(dataset, batch_size=1, shuffle=True)
+    for batch_idx, (data_input) in enumerate(dataloader):
+        continue
+    return dataloader
