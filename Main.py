@@ -14,9 +14,6 @@ from Datasets import shoulders, transfer, random
 
 
 
-
-
-
 if __name__ == "__main__":
     # Create dataloader
     dataset = Random3DDataset()
