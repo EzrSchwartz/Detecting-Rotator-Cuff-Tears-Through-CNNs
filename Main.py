@@ -9,9 +9,10 @@ from PIL import Image
 import tqdm
 from tqdm import tqdm
 from Synthetic3dDataset import Random3DDataset
-from Clymer import randintModel, transferModelfrom Clymer import randintModel, transferModel
+from Clymer import randintModel, transferModel
+
 from Datasets import shoulders, transfer, random
-from UNetEncoder import 
+from UNetEncoder import UNet
 
 
 if __name__ == "__main__":
