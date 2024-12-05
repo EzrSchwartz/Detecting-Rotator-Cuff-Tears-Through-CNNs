@@ -86,3 +86,4 @@ def UNet():
     model = UNet3D().to(device)
     input_data = torch.rand((1, 1, 128, 128, 128), device=device)
     print(f"Output shape: {output.shape}")
+UNet()
