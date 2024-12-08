@@ -76,14 +76,49 @@ class UNet3D(nn.Module):
         self.decoder = Decoder3D()
     
     def forward(self, x):
+        # Get encoder outputs
         enc_outputs = self.encoder(x)
+        enc3, enc2, enc1 = enc_outputs[:-1]  # Get encoder features
         bottleneck_output = self.bottleneck(enc_outputs[-1])
-        return self.decoder(bottleneck_output, enc_outputs[:-1])
+        
+        # Get decoder outputs at each level
+        dec1 = self.decoder.dec1(torch.cat([self.decoder.up1(bottleneck_output), enc3], dim=1))
+        dec2 = self.decoder.dec2(torch.cat([self.decoder.up2(dec1), enc2], dim=1))
+        dec3 = self.decoder.dec3(torch.cat([self.decoder.up3(dec2), enc1], dim=1))
+        final_output = self.decoder.final(dec3)
+        
+        # Calculate MSE loss between encoder and decoder outputs at each level
+        # Compare feature maps at each level
+        mse_loss1 = torch.nn.functional.mse_loss(dec1, enc3)  # Deepest level
+        mse_loss2 += torch.nn.functional.mse_loss(dec2, enc2)  # Middle level
+        mse_loss3 += torch.nn.functional.mse_loss(dec3, enc1)  # Shallow level
+        mse_loss4 += torch.nn.functional.mse_loss(final_output, x)  # Final output vs input
+        
+        return final_output, mse_loss1,mse_loss2,mse_loss3,mse_loss4
 
 
-def UNet():
+def UNet(_numEpoch,_TrainingData):
     device = torch.device("cuda" if torch.cuda.is_available() else "cpu")
     model = UNet3D().to(device)
+    loss = nn.MSELoss()
+    TrainingDataLoader = _TrainingData
+    numEpoch = _numEpoch
+    for epoch in range(numEpoch):
+        for batch_idx, (TrainingData,_) in enumerate(TrainingDataLoader):
+            optimizer = torch.optim.Adam(model.parameters(),lr=0.00001)
+            optimizer.zero_grad()
+
+            _ = model(TrainingData)
+            print(f"MSE1: {_[1]}")
+            print(f"MSE2: {_[2]}")
+            print(f"MSE3: {_[3]}")
+            print(f"MSE4: {_[4]}")
+
+            optimizer.step()
+
+            model(TrainingData)
+
+
     input_data = torch.rand((1, 1, 128, 128, 128), device=device)
+
     print(f"Output shape: {output.shape}")
-UNet()
