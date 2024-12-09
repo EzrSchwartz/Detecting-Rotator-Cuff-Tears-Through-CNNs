@@ -62,10 +62,15 @@ class Decoder3D(nn.Module):
     
     def forward(self, bottleneck_output, encoder_outputs):
         enc3, enc2, enc1 = encoder_outputs
-        dec1 = self.dec1(torch.cat([self.up1(bottleneck_output), enc3], dim=1))
-        dec2 = self.dec2(torch.cat([self.up2(dec1), enc2], dim=1))
-        dec3 = self.dec3(torch.cat([self.up3(dec2), enc1], dim=1))
-        return self.final(dec3)
+
+
+        dec1 = self.dec1(bottleneck_output)
+        
+        dec2 = self.dec2(dec1)
+        print(dec2.shape)
+        print(enc2.shape)
+        dec3 = self.dec3(dec2)
+        return dec1,dec2,dec3,self.final(dec3)
 
 # Complete Model
 class UNet3D(nn.Module):
@@ -78,22 +83,34 @@ class UNet3D(nn.Module):
     def forward(self, x):
         # Get encoder outputs
         enc_outputs = self.encoder(x)
-        enc3, enc2, enc1 = enc_outputs[:-1]  # Get encoder features
+        enc1 = enc_outputs[0]  # Get encoder features
+        enc2 = enc_outputs[1]
+        enc3 = enc_outputs[2]
         bottleneck_output = self.bottleneck(enc_outputs[-1])
+
+        # print(bottleneck_output.shape)
+        # # Get decoder outputs at each level
+        # dec1 = self.decoder.dec1(torch.cat([self.decoder.up1(bottleneck_output)], dim=1))
+        # dec2 = self.decoder.dec2(torch.cat([self.decoder.up2(dec1), enc2], dim=1))
+        # dec3 = self.decoder.dec3(torch.cat([self.decoder.up3(dec2), enc1], dim=1))
+        # final_output = self.decoder.final(dec3)
         
-        # Get decoder outputs at each level
-        dec1 = self.decoder.dec1(torch.cat([self.decoder.up1(bottleneck_output), enc3], dim=1))
-        dec2 = self.decoder.dec2(torch.cat([self.decoder.up2(dec1), enc2], dim=1))
-        dec3 = self.decoder.dec3(torch.cat([self.decoder.up3(dec2), enc1], dim=1))
-        final_output = self.decoder.final(dec3)
+        outputs= self.decoder(bottleneck_output, (enc3, enc2, enc1))
+    
+    # If you still want to calculate MSE losses:
+        dec1 = outputs[0]  # Adjust these indices based on what your decoder returns
+        dec2 = outputs[1]
+        dec3 = outputs[2]
+        final_output = outputs[3]
+
+
         
-        # Calculate MSE loss between encoder and decoder outputs at each level
-        # Compare feature maps at each level
+
         mse_loss1 = torch.nn.functional.mse_loss(dec1, enc3)  # Deepest level
-        mse_loss2 += torch.nn.functional.mse_loss(dec2, enc2)  # Middle level
-        mse_loss3 += torch.nn.functional.mse_loss(dec3, enc1)  # Shallow level
-        mse_loss4 += torch.nn.functional.mse_loss(final_output, x)  # Final output vs input
-        
+        mse_loss2 = torch.nn.functional.mse_loss(dec2, enc2)  # Middle level
+        mse_loss3 = torch.nn.functional.mse_loss(dec3, enc1)  # Shallow level
+        mse_loss4 = torch.nn.functional.mse_loss(final_output, x)  # Final output vs input
+
         return final_output, mse_loss1,mse_loss2,mse_loss3,mse_loss4
 
 
