@@ -1,7 +1,6 @@
 import torch
 import torch.nn as nn
 
-# Encoder Module
 class Encoder3D(nn.Module):
     def __init__(self):
         super(Encoder3D, self).__init__()
@@ -46,10 +45,12 @@ class Decoder3D(nn.Module):
         super(Decoder3D, self).__init__()
         self.up1 = nn.ConvTranspose3d(256, 128, kernel_size=2, stride=2)
         self.dec1 = self._conv_block(256, 128)
+
         self.up2 = nn.ConvTranspose3d(128, 64, kernel_size=2, stride=2)
-        self.dec2 = self._conv_block(128, 64)
+        self.dec2 = self._conv_block1(128, 64)
+
         self.up3 = nn.ConvTranspose3d(64, 32, kernel_size=2, stride=2)
-        self.dec3 = self._conv_block(64, 32)
+        self.dec3 = self._conv_block2(64, 32)
         self.final = nn.Conv3d(32, 1, kernel_size=1)
     
     def _conv_block(self, in_channels, out_channels):
@@ -59,6 +60,25 @@ class Decoder3D(nn.Module):
             nn.Conv3d(out_channels, out_channels, kernel_size=3, padding=1),
             nn.ReLU(inplace=True),
         )
+    def _conv_block1(self, in_channels, out_channels):
+        return nn.Sequential(
+            nn.Conv3d(in_channels, out_channels, kernel_size=(2,2,2), padding=(1,4,4)),
+            nn.ReLU(inplace=True),
+            nn.Conv3d(out_channels, out_channels, kernel_size=(2,1,1), padding=(1,3,3)),
+            nn.ReLU(inplace=True),
+        )
+    
+    def _conv_block2(self, in_channels, out_channels):
+        return nn.Sequential(
+        # Upsample spatial dimensions (doubling size)
+        nn.ConvTranspose3d(in_channels, in_channels, kernel_size=(2, 2, 2), stride=(2, 2, 2)),
+        nn.ReLU(inplace=True),
+        
+        # Reduce the number of channels
+        nn.Conv3d(in_channels, out_channels, kernel_size=(3, 3, 3), padding=(1, 1, 1)),
+        nn.ReLU(inplace=True)
+    )
+
     
     def forward(self, bottleneck_output, encoder_outputs):
         enc3, enc2, enc1 = encoder_outputs
@@ -67,8 +87,8 @@ class Decoder3D(nn.Module):
         dec1 = self.dec1(bottleneck_output)
         
         dec2 = self.dec2(dec1)
-        print(dec2.shape)
-        print(enc2.shape)
+        # dec2 = nn.tran((1,64,4,25,25))
+
         dec3 = self.dec3(dec2)
         return dec1,dec2,dec3,self.final(dec3)
 
@@ -104,11 +124,17 @@ class UNet3D(nn.Module):
         final_output = outputs[3]
 
 
-        
 
         mse_loss1 = torch.nn.functional.mse_loss(dec1, enc3)  # Deepest level
+        print(dec2.shape)
+        print(enc2.shape)
+
+        print(dec3.shape)
+        print(enc1.shape)
         mse_loss2 = torch.nn.functional.mse_loss(dec2, enc2)  # Middle level
+        
         mse_loss3 = torch.nn.functional.mse_loss(dec3, enc1)  # Shallow level
+
         mse_loss4 = torch.nn.functional.mse_loss(final_output, x)  # Final output vs input
 
         return final_output, mse_loss1,mse_loss2,mse_loss3,mse_loss4
@@ -136,6 +162,4 @@ def UNet(_numEpoch,_TrainingData):
             model(TrainingData)
 
 
-    input_data = torch.rand((1, 1, 128, 128, 128), device=device)
 
-    print(f"Output shape: {output.shape}")
