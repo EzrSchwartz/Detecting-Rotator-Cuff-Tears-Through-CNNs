@@ -1,6 +1,8 @@
 import torch
 import torch.nn as nn
-
+import torch.nn.functional as F
+import tqdm 
+from tqdm import tqdm
 class Encoder3D(nn.Module):
     def __init__(self):
         super(Encoder3D, self).__init__()
@@ -47,7 +49,7 @@ class Decoder3D(nn.Module):
         self.dec1 = self._conv_block(256, 128)
 
         self.up2 = nn.ConvTranspose3d(128, 64, kernel_size=2, stride=2)
-        self.dec2 = self._conv_block1(128, 64)
+        self.dec2 = self._conv_block2(128, 64)
 
         self.up3 = nn.ConvTranspose3d(64, 32, kernel_size=2, stride=2)
         self.dec3 = self._conv_block2(64, 32)
@@ -87,6 +89,8 @@ class Decoder3D(nn.Module):
         dec1 = self.dec1(bottleneck_output)
         
         dec2 = self.dec2(dec1)
+        dec2 = F.pad(dec2, (0, 1, 0, 1))  # Pad right and bottom by 1
+
         # dec2 = nn.tran((1,64,4,25,25))
 
         dec3 = self.dec3(dec2)
@@ -126,11 +130,7 @@ class UNet3D(nn.Module):
 
 
         mse_loss1 = torch.nn.functional.mse_loss(dec1, enc3)  # Deepest level
-        print(dec2.shape)
-        print(enc2.shape)
 
-        print(dec3.shape)
-        print(enc1.shape)
         mse_loss2 = torch.nn.functional.mse_loss(dec2, enc2)  # Middle level
         
         mse_loss3 = torch.nn.functional.mse_loss(dec3, enc1)  # Shallow level
@@ -146,20 +146,20 @@ def UNet(_numEpoch,_TrainingData):
     loss = nn.MSELoss()
     TrainingDataLoader = _TrainingData
     numEpoch = _numEpoch
-    for epoch in range(numEpoch):
-        for batch_idx, (TrainingData,_) in enumerate(TrainingDataLoader):
+    for epoch in tqdm(range(numEpoch)):
+        for batch_idx, (TrainingData,_) in tqdm(enumerate(TrainingDataLoader)):
             optimizer = torch.optim.Adam(model.parameters(),lr=0.00001)
             optimizer.zero_grad()
 
             _ = model(TrainingData)
-            print(f"MSE1: {_[1]}")
-            print(f"MSE2: {_[2]}")
-            print(f"MSE3: {_[3]}")
-            print(f"MSE4: {_[4]}")
-
             optimizer.step()
+        print(F'epoch:{epoch}')
+        print(f"MSE1: {_[1]}")
+        print(f"MSE2: {_[2]}")
+        print(f"MSE3: {_[3]}")
+        print(f"MSE4: {_[4]}")
 
-            model(TrainingData)
+
 
 
 
