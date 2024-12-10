@@ -6,7 +6,7 @@ from PIL import Image
 
 
 class Random3DDataset(Dataset):
-    def __init__(self, num_samples=1000, depth=8, height=50, width=50, num_classes=2):
+    def __init__(self, num_samples=1000, depth=8, height=214, width=214, num_classes=2):
         self.num_samples = num_samples
         self.depth = depth
         self.height = height
