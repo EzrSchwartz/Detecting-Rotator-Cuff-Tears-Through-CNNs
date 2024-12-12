@@ -29,4 +29,3 @@ if __name__ == "__main__":
         
     # transferModel(1, random(1000), random(1000))
     UNet(1,random(10000))
-             
