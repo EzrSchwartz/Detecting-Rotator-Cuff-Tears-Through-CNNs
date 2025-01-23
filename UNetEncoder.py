@@ -142,7 +142,8 @@ class UNet3D(nn.Module):
 
 def UNet(_numEpoch,_TrainingData):
     device = torch.device("cuda" if torch.cuda.is_available() else "cpu")
-    model = UNet3D().to(device)
+    
+    model = nn.DataParallel(UNet3D()).to(device)
     loss = nn.MSELoss()
     TrainingDataLoader = _TrainingData
     numEpoch = _numEpoch
