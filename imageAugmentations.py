@@ -25,7 +25,7 @@ def extractImages(rootDirectory, saveDirectory):
         np.random.seed(seed1)
 
         for root, dirs, files in os.walk(rootDirectory):
-            for dir in dirs:
+            for dir in tqdm(dirs):
                 tensorstack = []
                 images_batch = []
                 dir_path = os.path.join(root, dir)
@@ -56,6 +56,7 @@ def extractImages(rootDirectory, saveDirectory):
 
         # Save the augmented tensors for this seed
         save_path = os.path.join(saveDirectory, f'ShouldersAugmented({seed}).pt')
+        print(len(allTensors))
         torch.save(allTensors, save_path)
         allTensors = []  # Clear tensors for the next seed
 
