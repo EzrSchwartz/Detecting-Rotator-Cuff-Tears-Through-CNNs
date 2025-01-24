@@ -25,13 +25,16 @@ def extractImages(rootDirectory, saveDirectory):
         np.random.seed(seed1)
 
         for root, dirs, files in os.walk(rootDirectory):
+            print(f"Root: {root}, Dirs: {dirs}, Files: {files}")
             for dir in tqdm(dirs):
                 tensorstack = []
                 images_batch = []
                 dir_path = os.path.join(root, dir)
+                print(f"Processing directory: {dir_path}")
 
                 # List only images in the directory
-                image_paths = [f for f in os.listdir(dir_path) if f.endswith(('.jpg', '.png'))]
+                image_paths = [f for f in os.listdir(dir_path) if f.endswith('.png')]
+                print(f"Found images: {len(image_paths)} in directory: {dir_path}")
 
                 for image in image_paths:
                     img_path = os.path.join(dir_path, image)
@@ -53,10 +56,11 @@ def extractImages(rootDirectory, saveDirectory):
                         # Stack tensors into a 4D batch
                         tensor_3d = torch.stack(tensorstack, dim=0)
                         allTensors.append(tensor_3d)
+                        print(f"Appended tensor stack of shape: {tensor_3d.shape}")
 
         # Save the augmented tensors for this seed
         save_path = os.path.join(saveDirectory, f'ShouldersAugmented({seed}).pt')
-        print(len(allTensors))
+        print(f"Number of tensors to save: {len(allTensors)}")
         torch.save(allTensors, save_path)
         allTensors = []  # Clear tensors for the next seed
 
