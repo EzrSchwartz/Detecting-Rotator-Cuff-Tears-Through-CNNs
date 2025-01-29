@@ -4,6 +4,32 @@ import os
 import numpy as np
 from PIL import Image
 
+import torch
+from torch.utils.data import Dataset, DataLoader
+
+class Real3DDataset(Dataset):
+    def __init__(self, dataset_path):
+        self.dataset = torch.load(dataset_path)  # Load .pt file
+
+        # Ensure the dataset is structured correctly
+        if isinstance(self.dataset, dict):
+            self.data = self.dataset["data"]  # Assuming key is 'data'
+            self.labels = self.dataset["labels"]  # Assuming key is 'labels'
+        elif isinstance(self.dataset, (list, torch.Tensor)):
+            self.data = self.dataset
+            self.labels = None  # If no labels exist
+        else:
+            raise ValueError("Unsupported dataset format in .pt file.")
+
+    def __len__(self):
+        return len(self.data)
+
+    def __getitem__(self, idx):
+        if self.labels is not None:
+            return self.data[idx], self.labels[idx]
+        else:
+            return self.data[idx]  # Unsupervised case
+
 
 class Random3DDataset(Dataset):
     def __init__(self, num_samples=1000, depth=8, height=214, width=214, num_classes=2):
@@ -110,6 +136,13 @@ def transfer(Count):
             return dataloader
 def random(Count):
     dataset = Random3DDataset()
+    dataloader = DataLoader(dataset, batch_size=1, shuffle=True)
+    for batch_idx, (data_input) in enumerate(dataloader):
+        continue
+    return dataloader
+
+def RealData(file):
+    dataset = Real3DDataset(file)
     dataloader = DataLoader(dataset, batch_size=1, shuffle=True)
     for batch_idx, (data_input) in enumerate(dataloader):
         continue
