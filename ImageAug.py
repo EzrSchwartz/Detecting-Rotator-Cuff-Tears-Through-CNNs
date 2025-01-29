@@ -6,6 +6,8 @@ import numpy as np
 import os
 from PIL import Image
 import torch
+import torch
+import os
 
 
 seq = iaa.Sequential([
@@ -71,8 +73,32 @@ def extractImages(rootDirectory):
                         tensor_3d = torch.stack(tensorstack, dim=0)
                         tensor_3d = tensor_3d.permute(1, 0, 2, 3).unsqueeze(0)
                         allTensors.append(tensor_3d)
-        torch.save(allTensors, f'D:\Shoulders\ShouldersAugmented({seed}).pt')
+        torch.save(allTensors, f'/home/ec2-user/Shoulders/ShouldersAugmented({seed}).pt')
         allTensors = []
     return allTensors
-extractImages(R"D:\ShoulderTears\All")
+extractImages(R"/home/ec2-user/ShoulderTears/All")
+
+
+
+# Directory containing .pt files
+directory = "/home/ec2-user/Shoulders"
+output_file = "/home/ec2-user/TrainingData/TransferLearingData.pt"
+
+# List all .pt files
+pt_files = [os.path.join(directory, f) for f in os.listdir(directory) if f.endswith(".pt")]
+
+# Load and concatenate all data
+datasets = [torch.load(f) for f in pt_files]
+
+# Check if data is in tensor format or dictionary
+if isinstance(datasets[0], dict):  # If .pt files store dictionaries
+    merged_data = {key: torch.cat([d[key] for d in datasets], dim=0) for key in datasets[0].keys()}
+elif isinstance(datasets[0], torch.Tensor):  # If .pt files store tensors directly
+    merged_data = torch.cat(datasets, dim=0)
+else:
+    raise ValueError("Unsupported data format in .pt files.")
+
+# Save the merged dataset
+torch.save(merged_data, output_file)
+print(f"Merged dataset saved to {output_file}")
 
