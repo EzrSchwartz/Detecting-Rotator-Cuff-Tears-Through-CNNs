@@ -10,7 +10,7 @@ import tqdm
 from tqdm import tqdm
 
 from Clymer import randintModel, transferModel
-from Datasets import shoulders, transfer, random
+from Datasets import shoulders, transfer, random, RealData
 from UNetEncoder import UNet
 
 
@@ -28,4 +28,4 @@ if __name__ == "__main__":
     #         break
         
     # transferModel(1, random(1000), random(1000))
-    UNet(1,random(10000))
+    UNet(1,RealData('/home/ec2-user/TrainingData/TransferLearingData.pt'))
