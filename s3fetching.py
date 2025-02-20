@@ -3,14 +3,14 @@ import subprocess
 from pandas import *
 
 
-data = read_csv('pathtoCSVfile.csv')
+data = read_csv(R'/mnt/qnap-nfs/ImagesDownloadLinks.csv')
 
 s3_links = data['IMAGE_FILE'].tolist()
 # List of S3 download links
 
 
 # Directory to store the extracted files
-output_dir = '/path/to/output/directory'
+output_dir = '/mnt/qnap-nfs/TransferLearning'
 
 # Create the output directory if it doesn't exist
 os.makedirs(output_dir, exist_ok=True)
