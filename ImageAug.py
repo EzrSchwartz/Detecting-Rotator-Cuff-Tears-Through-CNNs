@@ -37,7 +37,7 @@ class TensorDataset(Dataset):
 def extractImages(rootDirectory):
     allTensors = []
     transform = transforms.Compose([
-        transforms.Resize((512, 512)),
+        transforms.Resize((214, 214)),
         transforms.ToTensor()
     ])
     for seed in tqdm(range(1,51)):
