@@ -1,1 +1,1 @@
-pip install torch numpy pillow tqdm imgaug
+pip install torch numpy pillow tqdm imgaug pandas
