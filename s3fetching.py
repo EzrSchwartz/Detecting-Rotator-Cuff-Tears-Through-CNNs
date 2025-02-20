@@ -1,7 +1,9 @@
 import os
 import subprocess
+import pandas
 from pandas import *
-
+import tqdm
+from tqdm import tqdm
 
 data = read_csv(R'/mnt/qnap-nfs/ImagesDownloadLinks.csv')
 
@@ -15,7 +17,7 @@ output_dir = '/mnt/qnap-nfs/TransferLearning'
 # Create the output directory if it doesn't exist
 os.makedirs(output_dir, exist_ok=True)
 
-for link in s3_links:
+for link in tqdm(s3_links):
     # Extract the file name from the link
     file_name = link.split('/')[-1]
     file_path = os.path.join(output_dir, file_name)
