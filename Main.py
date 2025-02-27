@@ -10,8 +10,8 @@ import tqdm
 from tqdm import tqdm
 from ImageAug import extractImages
 from Clymer import randintModel, transferModel
-from Datasets import shoulders, transfer, random, RealData
-from UNetEncoder import UNet
+from Datasets import shoulders, transfer, random, RealData, 
+from UNetEncoder import UNet, complete_training_pipeline
 
 
 if __name__ == "__main__":
@@ -53,4 +53,4 @@ if __name__ == "__main__":
     print(f"Merged dataset saved to {output_file}")
     
     # transferModel(1, random(1000), random(1000))
-    UNet(1,RealData('/home/ec2-user/TrainingData/TransferLearingData.pt'))
+    complete_training_pipeline(1,RealData('/home/ec2-user/TrainingData/TransferLearingData.pt'))
