@@ -147,3 +147,50 @@ def RealData(file):
     for batch_idx, (data_input) in enumerate(dataloader):
         continue
     return dataloader
+
+
+
+
+
+def TransferDataLoader():
+    directory = "/home/ec2-user/Shoulders"
+    output_file = "/home/ec2-user/TrainingData/TransferLearingData.pt"
+
+# List all .pt files
+    pt_files = [os.path.join(directory, f) for f in os.listdir(directory) if f.endswith(".pt")]
+
+# Load and concatenate all data
+    datasets = [torch.load(f) for f in pt_files]
+
+# Check if data is in tensor format or dictionary
+    if isinstance(datasets[0], dict):  # If .pt files store dictionaries
+        merged_data = {key: torch.cat([d[key] for d in datasets], dim=0) for key in datasets[0].keys()}
+    elif isinstance(datasets[0], torch.Tensor):  # If .pt files store tensors directly
+        merged_data = torch.cat(datasets, dim=0)
+    else:
+        raise ValueError("Unsupported data format in .pt files.")
+
+# Save the merged dataset
+    torch.save(merged_data, output_file)
+    print(f"Merged dataset saved to {output_file}")
+    #make a data loader out of the merged data
+    transfer_data_loader = DataLoader(merged_data, batch_size=4, shuffle=True)
+    return transfer_data_loader
+
+def ShoulderDataLoader():
+    directory = "/home/ec2-user/Shoulders"
+    output_file = "/home/ec2-user/TrainingData/ShoulderData.pt"
+    #make it go through the direcotry which has tons of .pt files and make a dataloader out of it
+    pt_files = [os.path.join(directory, f) for f in os.listdir(directory) if f.endswith(".pt")]
+    datasets = [torch.load(f) for f in pt_files]
+    if isinstance(datasets[0], dict):  # If .pt files store dictionaries
+        merged_data = {key: torch.cat([d[key] for d in datasets], dim=0) for key in datasets[0].keys()}
+    elif isinstance(datasets[0], torch.Tensor):  # If .pt files store tensors directly
+        merged_data = torch.cat(datasets, dim=0)
+    else:
+        raise ValueError("Unsupported data format in .pt files.")
+    torch.save(merged_data, output_file)
+    print(f"Merged dataset saved to {output_file}")
+    #make a data loader out of the merged data
+    shoulder_data_loader = DataLoader(merged_data, batch_size=4, shuffle=True)
+    return shoulder_data_loader
