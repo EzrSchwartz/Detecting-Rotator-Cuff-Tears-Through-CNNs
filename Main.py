@@ -5,34 +5,72 @@ from torch.utils.data import Dataset, DataLoader
 import numpy as np
 import os
 from PIL import Image
-
+from evolveNoProp import evolve_population,evaluate_fitness
 import tqdm
 from tqdm import tqdm
-from ImageAug import extractImages
-from Clymer import randintModel, transferModel
+from ImageAug import extractImages, extractImagesT, extractImagesR
+# from Clymer import randintModel, transferModel
 from Datasets import shoulders, transfer, random, RealData, ShoulderDataLoader, TransferDataLoader
-from UNetEncoder import UNet, complete_training_pipeline
+from UNetEncoder import UNet, complete_training_pipeline , evaluate_models
+from resnet import UnsupervisedResNet503D, UnsupervisedLoss, train_step, train_unsupervised
 
+# 0 is the label for Normal, 1 is the label for Tear
 
-if __name__ == "__main__":
-    # dataset = Random3DDataset()
-
-    # dataloader = DataLoader(dataset, batch_size=4, shuffle=True)
+# if __name__ == "__main__":
+#     # extractImagesT(R'\\NASDA4788\SciResearchRTCStorage\ShoulderTears\TESTING\FullTear')
+#     # extractImagesR(R'\\NASDA4788\SciResearchRTCStorage\ShoulderTears\TESTING\Normal')
+#     # Set random seed for reproducibility    
+#     # Initialize model
+#     model = UnsupervisedResNet503D(input_channels=1)
     
-    # for batch_idx, (data, labels) in enumerate(dataloader):
-    #     print(f"Batch {batch_idx}")
-    #     print(f"Data shape: {data.shape}")  # Should be (batch_size, 1, depth, height, width)
-    #     print(f"Labels: {labels}")
-        
-    #     if batch_idx == 0:  # print first batch
-    #         break
-    extractImages(R"/home/ec2-user/ShoulderTears/All")
-
+#     # Test the model with a dummy input
+#     dummy_input = torch.randn(32, 1, 16, 214, 214)
+#     output = model(dummy_input)
+#     print(f"Input shape: {dummy_input.shape}")
+#     print(f"Output shape: {output.shape}")
+    
+#     # Train the model
+#     train_unsupervised(
+#         model=model,
+#         num_epochs=5,
+#         batch_size=32,
+#         learning_rate=0.001
+#     )
 
 
 # Directory containing .pt files
-    
-    
-    complete_training_pipeline(TransferDataLoader(), ShoulderDataLoader(), transfer_epochs=100, classification_epochs=100,device='cuda', save_checkpoints=True)
-    # transferModel(1, random(1000), random(1000))
-    # complete_training_pipeline(1,RealData('/home/ec2-user/TrainingData/TransferLearingData.pt'))
+    # ShoulderDataLoader(R'\\NASDA4788\SciResearchRTCStorage\Shoulderaugmented', R'D:\ShoulderDataLoaders\shoulderdataloader.pt')
+    # model_paths = ['model_joint.pth', 'model_slow.pth', 'model_frozen.pth']
+    # test_loader = ShoulderDataLoader(R'D:\ShoulderAugmented', batch_size=9)
+    # results = evaluate_models(model_paths, test_loader) 
+
+
+# if __name__ == "__main__":
+#     # complete_training_pipeline(TransferDataLoader(R"D:\ShoulderDataLoaders\transferdataloader.pt"), ShoulderDataLoader(R'D:\ShoulderAugmented'), transfer_epochs=100, classification_epochs=15, device='cuda', save_checkpoints=True)
+
+#     test_loader = ShoulderDataLoader(R'D:\Testing', batch_size=1)
+#     model_paths = ['model_joint.pth', 'model_slow.pth', 'model_frozen.pth']
+#     # model_paths = ['model_checkpoint_epoch_5.pth', 'model_checkpoint_epoch_10.pth', 'model_checkpoint_epoch_15.pth']
+
+#     # Add debug information about the data loader
+#     print(f"Test loader length: {len(test_loader)}")
+#     results = evaluate_models(model_paths, test_loader)
+#     print(results )
+
+if __name__ == "__main__":
+    # extractImagesR(R"D:\Shoulders\ShoulderTears\ShoulderTears\Val\0")
+    # extractImagesT(R"D:\Shoulders\ShoulderTears\ShoulderTears\Val\1")
+
+    train_loader = ShoulderDataLoader(R'D:\Training', batch_size=1)
+ 
+    val_loader = ShoulderDataLoader(R'D:\Validation', batch_size=1)
+    test_loader = ShoulderDataLoader(R'D:\Testing', batch_size=1)
+    best_model = evolve_population(
+train_loader,val_loader
+    )
+    test_accuracy = evaluate_fitness(best_model, test_loader)
+    print(f"Test Accuracy of the best evolved model: {test_accuracy:.4f}")
+
+    # 5.4  Save the best model (optional)
+    torch.save(best_model.state_dict(), "best_evolved_model.pth")
+    print("Best model saved to best_evolved_model.pth")
