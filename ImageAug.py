@@ -112,7 +112,7 @@ def extractImages(rootDirectory):
 #     def __getitem__(self, idx):
 #         return self.tensors[idx], self.labels[idx]
 
-def extractImagesR(rootDirectory):
+def extractImagesR(rootDirectory, outputDirectory):
     allTensors = []
     allLabels = []
     
@@ -125,7 +125,7 @@ def extractImagesR(rootDirectory):
     dirs = [d for d in os.listdir(rootDirectory) if os.path.isdir(os.path.join(rootDirectory, d))]
     label_dict = {dir_name: idx for idx, dir_name in enumerate(sorted(dirs))}
     
-    for seed in tqdm(range(1,6)):
+    for seed in tqdm(range(1,11)):
         seed1 = seed * np.random.randint(1, 100000)
         np.random.seed(seed1)
 
@@ -162,7 +162,6 @@ def extractImagesR(rootDirectory):
                         tensor_3d = torch.stack(tensorstack, dim=0)
                         tensor_3d = tensor_3d.permute(1, 0, 2, 3)
                         tensor_3d = tensor_3d.unsqueeze(0)
-                        tensor_3d = tensor_3d.unsqueeze(1)
 
                         tensors_for_seed.append(tensor_3d)
                         labels_for_seed.append(current_label)
@@ -172,7 +171,7 @@ def extractImagesR(rootDirectory):
             'tensors': tensors_for_seed,
             'labels': labels_for_seed,
             'label_dict': label_dict  # Save the label dictionary for reference
-        }, f'D:\Testing\ShoulderNormal({seed}).pt')
+        }, f'{outputDirectory}\ShoulderNormal({seed}).pt')
         
         allTensors.extend(tensors_for_seed)
         allLabels.extend(labels_for_seed)
@@ -181,7 +180,7 @@ def extractImagesR(rootDirectory):
 
 
 
-def extractImagesT(rootDirectory):
+def extractImagesT(rootDirectory,outputDirectory):
     allTensors = []
     allLabels = []
     
@@ -194,7 +193,7 @@ def extractImagesT(rootDirectory):
     dirs = [d for d in os.listdir(rootDirectory) if os.path.isdir(os.path.join(rootDirectory, d))]
     label_dict = {dir_name: idx for idx, dir_name in enumerate(sorted(dirs))}
     
-    for seed in tqdm(range(1,6)):
+    for seed in tqdm(range(1,11)):
         seed1 = seed * np.random.randint(1, 100000)
         np.random.seed(seed1)
 
@@ -231,7 +230,6 @@ def extractImagesT(rootDirectory):
                         tensor_3d = torch.stack(tensorstack, dim=0)
                         tensor_3d = tensor_3d.permute(1, 0, 2, 3)
                         tensor_3d = tensor_3d.unsqueeze(0)
-                        tensor_3d = tensor_3d.unsqueeze(1)
 
                         tensors_for_seed.append(tensor_3d)
                         labels_for_seed.append(current_label)
@@ -241,7 +239,7 @@ def extractImagesT(rootDirectory):
             'tensors': tensors_for_seed,
             'labels': labels_for_seed,
             'label_dict': label_dict  # Save the label dictionary for reference
-        }, f'D:\Testing\ShoulderTorn({seed}).pt')
+        }, f'{outputDirectory}\ShoulderTorn({seed}).pt')
         
         allTensors.extend(tensors_for_seed)
         allLabels.extend(labels_for_seed)

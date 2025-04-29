@@ -390,6 +390,94 @@ def ShoulderDataLoader(directory: str, batch_size: int = 9) -> DataLoader:
     return dataloader
 
 
+
+
+# Custom Dataset class for handling lists of tensors and labels
+class TensorDataset(Dataset):
+    def __init__(self, tensors: List[torch.Tensor], labels: List[int]):
+        """
+        :param tensors: List of image tensors.
+        :param labels: List of corresponding numerical labels.
+        """
+        self.tensors = tensors
+        self.labels = labels
+
+    def __len__(self):
+        return len(self.tensors)
+
+    def __getitem__(self, idx: int) -> Tuple[torch.Tensor, int]:
+        """
+        Returns the data and label for a given index.
+
+        Args:
+            idx: The index of the data point.
+
+        Returns:
+            Tuple[torch.Tensor, int]: A tuple containing the image tensor
+            and its corresponding label.
+        """
+        return self.tensors[idx], self.labels[idx]
+
+
+
+
+
+def create_data_loader(
+    normal_dir: str,
+    torn_dir: str,
+    num_workers: int = 0
+) -> DataLoader:
+    """
+    Creates a PyTorch DataLoader from the 'normal' and 'torn' image data
+    saved by extractImagesR and extractImagesT.
+
+    Args:
+        normal_dir: Directory where 'normal' image tensors and labels are saved
+                    (e.g., 'D:\Testing\ShoulderNormal').
+        torn_dir: Directory where 'torn' image tensors and labels are saved
+                    (e.g., 'D:\Testing\ShoulderTorn').
+        batch_size: The batch size for the DataLoader.  Defaults to 32.
+        num_workers: Number of worker processes for the DataLoader. Defaults to 0.
+
+    Returns:
+        DataLoader: A PyTorch DataLoader combining the normal and torn data.
+    """
+    normal_tensors = []
+    normal_labels = []
+    torn_tensors = []
+    torn_labels = []
+
+    # Load data from the saved .pt files.  We load the tensors and labels
+    # from each seed's file, and combine them into a single list.
+    for seed in range(1, len(os.listdir(normal_dir))):  # Assuming you saved files with seeds 1-5
+        normal_data = torch.load(os.path.join(normal_dir, f'ShoulderNormal({seed}).pt'))
+        torn_data = torch.load(os.path.join(torn_dir, f'ShoulderTorn({seed}).pt'))
+        for tensor in normal_data['tensors']:
+            tensor = tensor.unsqueeze(1)
+        normal_tensors.extend(normal_data['tensors'])
+        normal_labels.extend(normal_data['labels'])
+        torn_tensors.extend(torn_data['tensors'])
+        torn_labels.extend(torn_data['labels'])
+
+    # Combine the 'normal' and 'torn' data into single lists
+    all_tensors = normal_tensors + torn_tensors
+    all_labels = normal_labels + torn_labels
+
+    # Create a TensorDataset
+    dataset = TensorDataset(all_tensors, all_labels)
+
+    # Create a DataLoader
+    dataloader = DataLoader(
+        dataset,
+        shuffle=True,  # Important to shuffle your data!
+        num_workers=num_workers,
+        drop_last=False  # Good to keep all data, even if last batch is smaller
+    )
+    return dataloader
+
+
+
+
 # import torch
 # import os
 # from torch.utils.data import IterableDataset, DataLoader
