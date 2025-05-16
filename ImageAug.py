@@ -161,7 +161,6 @@ def extractImagesR(rootDirectory, outputDirectory):
                     if tensorstack:
                         tensor_3d = torch.stack(tensorstack, dim=0)
                         tensor_3d = tensor_3d.permute(1, 0, 2, 3)
-                        tensor_3d = tensor_3d.unsqueeze(0)
 
                         tensors_for_seed.append(tensor_3d)
                         labels_for_seed.append(current_label)
@@ -229,10 +228,12 @@ def extractImagesT(rootDirectory,outputDirectory):
                     if tensorstack:
                         tensor_3d = torch.stack(tensorstack, dim=0)
                         tensor_3d = tensor_3d.permute(1, 0, 2, 3)
-                        tensor_3d = tensor_3d.unsqueeze(0)
+                        # tensor_3d = tensor_3d.unsqueeze(0)
 
                         tensors_for_seed.append(tensor_3d)
                         labels_for_seed.append(current_label)
+                        # print(f"Size of tensorstack: {tensor_3d.size()}")
+                        # print(f"Size of labels_for_seed: {len(labels_for_seed)}")
 
         # Save both tensors and labels for this seed
         torch.save({
@@ -245,6 +246,7 @@ def extractImagesT(rootDirectory,outputDirectory):
         allLabels.extend(labels_for_seed)
     
     return allTensors, allLabels, label_dict
+
 
 # # Example usage:
 # if __name__ == "__main__":

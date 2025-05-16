@@ -78,7 +78,7 @@ from resnet import UnsupervisedResNet503D, UnsupervisedLoss, train_step, train_u
 
 if __name__ == "__main__":
     # Example usage:
-    training_dir0 = R"D:\Trainin0" 
+    training_dir0 = R"D:\Training0" 
     training_dir1 = R"D:\Training1"  
     val_dir0 = R"D:\Validation0"
     val_dir1 = R"D:\Validation1" 
@@ -86,13 +86,13 @@ if __name__ == "__main__":
     test_dir0 = R"D:\Testing0"
     test_dir1 = R"D:\Testing1"
 
+    # extractImagesT(R"D:\Shoulders\ShoulderTears\ShoulderTears\Tears",training_dir1)
 
-    extractImagesR(R"D:\Shoulders\ShoulderTears\ShoulderTears\Normal",training_dir0)
-    extractImagesT(R"D:\Shoulders\ShoulderTears\ShoulderTears\Tears",training_dir1)
-    extractImagesR(R"D:\Shoulders\ShoulderTears\ShoulderTears\Val\0",val_dir0)
-    extractImagesT(R"D:\Shoulders\ShoulderTears\ShoulderTears\Val\1",val_dir1)
-    extractImagesR(R"D:\Shoulders\ShoulderTears\ShoulderTears\TESTING\0",test_dir0)
-    extractImagesT(R"D:\Shoulders\ShoulderTears\ShoulderTears\TESTING\1",test_dir1)
+    # extractImagesR(R"D:\Shoulders\ShoulderTears\ShoulderTears\Normal",training_dir0)
+    # extractImagesR(R"D:\Shoulders\ShoulderTears\ShoulderTears\Val\0",val_dir0)
+    # extractImagesT(R"D:\Shoulders\ShoulderTears\ShoulderTears\Val\1",val_dir1)
+    # extractImagesR(R"D:\Shoulders\ShoulderTears\ShoulderTears\TESTING\0",test_dir0)
+    # extractImagesT(R"D:\Shoulders\ShoulderTears\ShoulderTears\TESTING\1",test_dir1)
     
     
     train_loader = create_data_loader(training_dir0, training_dir1)
@@ -103,20 +103,20 @@ if __name__ == "__main__":
     first_batch = next(data_iter)
     images, labels = first_batch #unpack
 
-    # Print out the labels:
-    print(labels)
-    print(f"Shape of the images: {images.shape}")
-    print(f"Shape of the labels: {labels.shape}")
+    # # Print out the labels:
+    # print(labels)
+    # print(f"Shape of the images: {images.shape}")
+    # print(f"Shape of the labels: {labels.shape}")
 
-    # Example of iterating through the DataLoader
-    for batch_idx, (data, target) in enumerate(train_loader):
-        print(f"Batch {batch_idx}:")
-        print(f"Data shape: {data.shape}")
-        print(f"Target shape: {target.shape}")
-        print(f"Target: {target}")
-        #  Your training code here...
-        if batch_idx > 2:
-            break # only do a few batches for the example
+    # # Example of iterating through the DataLoader
+    # for batch_idx, (data, target) in enumerate(train_loader):
+    #     print(f"Batch {batch_idx}:")
+    #     print(f"Data shape: {data.shape}")
+    #     print(f"Target shape: {target.shape}")
+    #     print(f"Target: {target}")
+    #     #  Your training code here...
+    #     if batch_idx > 2:
+    #         break # only do a few batches for the example
     
     best_model = evolve_population(
 train_loader,val_loader

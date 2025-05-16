@@ -7,11 +7,11 @@ from typing import List, Tuple, Callable, Optional
 
 # Constants for the evolutionary algorithm
 POPULATION_SIZE = 100
-GENERATIONS = 150
-MUTATION_RATE = 0.1
+GENERATIONS = 400
+MUTATION_RATE = 0.15
 CROSSOVER_RATE = 0.7
-ELITISM_COUNT = 10  # Keep the top N individuals across generations
-
+ELITISM_COUNT = 5  # Keep the top N individuals across generations
+TOURNAMENT_SIZE = 5  # Number of individuals to select for tournament selection
 # Device to use (CPU or GPU)
 DEVICE = torch.device("cuda" if torch.cuda.is_available() else "cpu")
 
@@ -19,38 +19,112 @@ DEVICE = torch.device("cuda" if torch.cuda.is_available() else "cpu")
 # 1. Define the Classifier Model (Evolvable)
 # --------------------------------------------------------------------------------
 
-class SimpleClassifier(nn.Module):
-    """
-    A simple convolutional neural network for binary classification, designed to be evolved.
-    The architecture is fixed, but the weights are evolved.  Handles the specified
-    input dimensions (1, 1, 16, 214, 214).
-    """
-    def __init__(self):
-        super(SimpleClassifier, self).__init__()
-        self.conv1 = nn.Conv3d(1, 8, kernel_size=(3, 3, 3), stride=1, padding=1)
-        self.pool1 = nn.MaxPool3d(kernel_size=(2, 2, 2), stride=2)
-        self.conv2 = nn.Conv3d(8, 16, kernel_size=(3, 3, 3), stride=1, padding=1)
-        self.pool2 = nn.MaxPool3d(kernel_size=(2, 2, 2), stride=2)
-        # Calculate the size of the flattened features after the convolutional layers.
-        # Hardcoded based on the input size and pooling.
-        self.fc1_input_size = 16 * 2 * 2 * 26 * 26  #  Adjusted for 3D pooling
-        self.fc1 = nn.Linear(self.fc1_input_size, 64)
-        self.fc2 = nn.Linear(64, 1)  # Output a single value for binary classification.
 
-    def forward(self, x: torch.Tensor) -> torch.Tensor:
-        """
-        Forward pass of the CNN.
-        Args:
-            x: Input tensor of shape (batch_size, 1, 16, 214, 214).
-        Returns:
-            Output tensor of shape (batch_size, 1).
-        """
-        x = self.pool1(F.relu(self.conv1(x)))
-        x = self.pool2(F.relu(self.conv2(x)))
-        x = x.view(-1, self.fc1_input_size)  # Flatten the tensor
-        x = F.relu(self.fc1(x))
-        x = self.fc2(x)  # Output a single value
+
+class SimpleClassifier(nn.Module):
+    def __init__(self):
+        self.device = torch.device("cuda" if torch.cuda.is_available() else "cpu")
+        super(SimpleClassifier, self).__init__()
+        # Input shape: (batch_size, 1, 16, 214, 214)
+        
+        # First block: 1 -> 16
+        self.conv1 = nn.Conv3d(1, 16, kernel_size=3, padding=1)
+        self.bn1 = nn.BatchNorm3d(16)
+        self.pool1 = nn.MaxPool3d(kernel_size=(2, 2, 2), stride=(2, 2, 2), padding=(1, 1, 1))
+        # Size after pool1: (16, 8, 107, 107)
+        
+        # Second block: 16 -> 32
+        self.conv2 = nn.Conv3d(16, 32, kernel_size=3, padding=1)
+        self.bn2 = nn.BatchNorm3d(32)
+        self.pool2 = nn.MaxPool3d(kernel_size=(2, 2, 2), stride=(2, 2, 2), padding=(1, 1, 1))
+        # Size after pool2: (32, 4, 54, 54)
+        
+        # Third block: 32 -> 64
+        self.conv3 = nn.Conv3d(32, 64, kernel_size=3, padding=1)
+        self.bn3 = nn.BatchNorm3d(64)
+        self.pool3 = nn.MaxPool3d(kernel_size=(2, 2, 2), stride=(2, 2, 2), padding=(1, 1, 1))
+        # Size after pool3: (64, 2, 27, 27)
+        
+        # Fourth block: 64 -> 128
+        self.conv4 = nn.Conv3d(64, 128, kernel_size=3, padding=1)
+        self.bn4 = nn.BatchNorm3d(128)
+        self.pool4 = nn.MaxPool3d(kernel_size=(2, 2, 2), stride=(2, 2, 2), padding=(1, 1, 1))
+        # Size after pool4: (128, 1, 14, 14)
+        
+        # Fifth block: 128 -> 256
+        self.conv5 = nn.Conv3d(128, 256, kernel_size=3, padding=1)
+        self.bn5 = nn.BatchNorm3d(256)
+        self.pool5 = nn.MaxPool3d(kernel_size=(1, 2, 2), stride=(1, 2, 2), padding=(0, 1, 1))
+        # Size after pool5: (256, 1, 7, 7)
+        
+        # Add dropout for regularization
+        self.dropout = nn.Dropout3d(0.3)
+        
+        # Calculate the actual output size using a dummy forward pass
+        with torch.no_grad():
+            dummy_input = torch.randn(1, 1, 16, 214, 214)
+            x = self.forward_features(dummy_input)
+            self.fc1_input_size = x.view(1, -1).size(1)
+            # print(f"Calculated input size for fc1: {self.fc1_input_size}")
+
+        # Fully connected layers
+        self.fc1 = nn.Linear(self.fc1_input_size, 128)
+        self.fc2 = nn.Linear(128, 1)
+        
+    def forward_features(self, x):
+        # Add shape tracking for debugging
+        # print(f"Input shape: {x.shape}")
+        
+        # First block
+        x = self.pool1(F.relu(self.bn1(self.conv1(x))))
+        x = self.dropout(x)
+        # print(f"After block 1: {x.shape}")
+        
+        # Second block
+        x = self.pool2(F.relu(self.bn2(self.conv2(x))))
+        x = self.dropout(x)
+        # print(f"After block 2: {x.shape}")
+        
+        # Third block
+        x = self.pool3(F.relu(self.bn3(self.conv3(x))))
+        x = self.dropout(x)
+        # print(f"After block 3: {x.shape}")
+        
+        # Fourth block
+        x = self.pool4(F.relu(self.bn4(self.conv4(x))))
+        x = self.dropout(x)
+        # print(f"After block 4: {x.shape}")
+        
+        # Fifth block
+        x = self.pool5(F.relu(self.bn5(self.conv5(x))))
+        # print(f"After block 5: {x.shape}")
+        
         return x
+    
+    def forward(self, x):
+        # Feature extraction
+        x = self.forward_features(x)
+        
+        # Flatten
+        batch_size = x.size(0)
+        x = x.view(batch_size, -1)
+        
+        # Fully connected layers
+        x = F.relu(self.fc1(x))
+        x = self.dropout(x)
+        x = self.fc2(x)
+        
+        return x
+
+    def clone(self) -> 'SimpleClassifier':
+        """
+        Create a deep copy of the model with proper initialization
+        """
+        new_model = SimpleClassifier()
+        new_model.load_state_dict(self.state_dict())
+        return new_model
+
+
 
     def get_weights(self) -> List[torch.Tensor]:
         """
@@ -83,6 +157,7 @@ class SimpleClassifier(nn.Module):
         """
         # Create a new instance of the model
         new_model = SimpleClassifier()
+        new_model.to(self.device)  # Move to the same device as the original model
         # Copy the weights from the current model to the new model
         new_model.load_state_dict(self.state_dict())
         return new_model
@@ -199,7 +274,7 @@ def crossover(parent1: SimpleClassifier, parent2: SimpleClassifier, crossover_ra
                 mask = torch.rand(parent1_weights[i].size()).to(DEVICE) < 0.5
                 # Create the offspring weight tensor by combining the weights
                 # from the parents using the mask.
-                offspring_weights[i].data = (mask * parent1_weights[i].data) + ((1 - mask) * parent2_weights[i].data)
+                offspring_weights[i].data = (mask * parent1_weights[i].data) + ((~mask) * parent2_weights[i].data)
             else:
                 # If the parents have different shapes, it's probably an error,
                 # but we'll just use the weights from parent1.  A warning
@@ -250,96 +325,133 @@ def select_parents(population: List[SimpleClassifier],
 # 4. Main Evolutionary Algorithm Loop
 # --------------------------------------------------------------------------------
 
+
 def evolve_population(train_loader: torch.utils.data.DataLoader,
-                        val_loader: torch.utils.data.DataLoader) -> SimpleClassifier:
-    """
-    Evolve a population of SimpleClassifier models to perform binary classification
-    on the given training data.  Includes a validation set for monitoring
-    performance and early stopping.
-    Args:
-        train_loader: DataLoader for the training data.
-        val_loader:   DataLoader for the validation data.
-    Returns:
-        The best evolved SimpleClassifier model.
-    """
-    # 1. Initialize the population
-    population = [SimpleClassifier().to(DEVICE) for _ in range(POPULATION_SIZE)]
-    best_individual: Optional[SimpleClassifier] = None # type: ignore
-    best_fitness = -float('inf')
-    # Store the best fitness for each generation
-    best_fitnesses = []
-    # 2. Main evolutionary loop
+                     val_loader: torch.utils.data.DataLoader) -> SimpleClassifier:
+    device = torch.device("cuda:0" if torch.cuda.is_available() else "cpu")
+    print(f"Using device: {device}")
+    
+    # Initialize population
+    population = [SimpleClassifier().to(device) for _ in range(POPULATION_SIZE)]
+    best_individual = None
+    best_fitness = float('-inf')
+    
     for generation in range(GENERATIONS):
-        # 2.1 Evaluate the fitness of each individual in the population
+        # Evaluate fitness for each individual
         fitnesses = [evaluate_fitness(individual, train_loader) for individual in population]
-        # 2.2 Print the best fitness in the current generation
-        best_fitness_gen = max(fitnesses)
-        best_fitnesses.append(best_fitness_gen)
-        print(f"Generation {generation + 1}/{GENERATIONS} - Best Fitness: {best_fitness_gen:.4f}")
-
-        # 2.3 Update the best individual found so far
-        if best_fitness_gen > best_fitness:
-            best_fitness = best_fitness_gen
-            best_individual = population[fitnesses.index(best_fitness_gen)].clone()
-
-        # 2.4 Perform selection, crossover, and mutation to create the next generation
-        parents = select_parents(population, fitnesses)
-        offspring = []
-        for parent1, parent2 in parents:
-            child = crossover(parent1, parent2, CROSSOVER_RATE)
-            child = mutate(child, MUTATION_RATE)
-            offspring.append(child.to(DEVICE))
-
-        # 2.5 Elitism: Keep the top ELITISM_COUNT individuals from the previous generation
-        # Sort the population by fitness (descending order)
-        sorted_population = [p for _, p in sorted(zip(fitnesses, population), reverse=True)]
-        elites = sorted_population[:ELITISM_COUNT]
-        # Replace the least fit individuals in the offspring population with the elites
-        offspring[-ELITISM_COUNT:] = elites
-
-        population = offspring
-
-        # 2.6 Evaluate the best individual on the validation set.
-        if val_loader:
-            val_fitness = evaluate_fitness(best_individual, val_loader)
-            print(f"  Validation Fitness: {val_fitness:.4f}")
-    print("Evolutionary process complete.")
-    if best_individual is None:
-        raise ValueError("No best individual found during evolution.")
+        
+        # Create list of (fitness, model) tuples and sort by fitness
+        population_with_fitness = list(zip(fitnesses, population))
+        # Sort based on fitness values (first element of tuple)
+        population_with_fitness.sort(key=lambda x: x[0], reverse=True)
+        
+        # Unzip the sorted population
+        fitnesses, population = zip(*population_with_fitness)
+        population = list(population)  # Convert tuple back to list
+        
+        # Update best individual
+        if fitnesses[0] > best_fitness:
+            best_fitness = fitnesses[0]
+            best_individual = population[0].clone()
+        
+        print(f"Generation {generation + 1}/{GENERATIONS} - Best Fitness: {best_fitness:.4f}")
+        
+        # Selection
+        parents = []
+        for _ in range(POPULATION_SIZE // 2):
+            tournament = random.sample(list(enumerate(fitnesses)), TOURNAMENT_SIZE)
+            winner_idx = max(tournament, key=lambda x: x[1])[0]
+            parents.append(population[winner_idx])
+        
+        # Create pairs of parents
+        random.shuffle(parents)
+        parent_pairs = [(parents[i], parents[i+1]) for i in range(0, len(parents), 2)]
+        
+        # Create new population through crossover and mutation
+        new_population = []
+        for parent1, parent2 in parent_pairs:
+            # Create two children from each pair of parents
+            for _ in range(2):
+                child = crossover(parent1, parent2, CROSSOVER_RATE)
+                child = mutate(child, MUTATION_RATE)
+                new_population.append(child)
+        
+        # Ensure all models in the new population are on the correct device
+        population = [model.to(device) for model in new_population]
+        
+        # Optional: Add elitism by replacing the worst individual with the best from previous generation
+        if best_individual is not None:
+            population[-1] = best_individual.clone()
+    
     return best_individual
 
 
 
-# --------------------------------------------------------------------------------
-# 5. Main Script (Example Usage)
-# --------------------------------------------------------------------------------
-
-if __name__ == "__main__":
-    # 5.1. Create a dummy dataset and data loaders (replace with your actual data)
-    # Example data: (batch_size, 1, 16, 214, 214)
-    train_data = torch.randn(100, 1, 16, 214, 214)  # 100 samples
-    train_labels = torch.randint(0, 2, (100, 1)).float()  # Binary labels (0 or 1)
-    val_data = torch.randn(50, 1, 16, 214, 214)
-    val_labels = torch.randint(0, 2, (50, 1)).float()
-
-    train_dataset = torch.utils.data.TensorDataset(train_data, train_labels)
-    val_dataset = torch.utils.data.TensorDataset(val_data, val_labels)
 
 
-    train_loader = torch.utils.data.DataLoader(train_dataset, batch_size=10, shuffle=True)
-    val_loader = torch.utils.data.DataLoader(val_dataset, batch_size=10, shuffle=False)
 
-    # 5.2 Evolve the population and get the best model
-    best_model = evolve_population(train_loader, val_loader)
 
-    # 5.3 Evaluate the best model on the test set (replace with your test data)
-    test_data = torch.randn(20, 1, 16, 214, 214)  # 20 samples
-    test_labels = torch.randint(0, 2, (20, 1)).float()
-    test_dataset = torch.utils.data.TensorDataset(test_data, test_labels)
-    test_loader = torch.utils.data.DataLoader(test_dataset, batch_size=10, shuffle=False)
-    test_accuracy = evaluate_fitness(best_model, test_loader)
-    print(f"Test Accuracy of the best evolved model: {test_accuracy:.4f}")
 
-    # 5.4  Save the best model (optional)
-    torch.save(best_model.state_dict(), "best_evolved_model.pth")
-    print("Best model saved to best_evolved_model.pth")
+# def evolve_population(train_loader: torch.utils.data.DataLoader,
+#                         val_loader: torch.utils.data.DataLoader) -> SimpleClassifier:
+#     """
+#     Evolve a population of SimpleClassifier models to perform binary classification
+#     on the given training data.  Includes a validation set for monitoring
+#     performance and early stopping.
+#     Args:
+#         train_loader: DataLoader for the training data.
+#         val_loader:   DataLoader for the validation data.
+#     Returns:
+#         The best evolved SimpleClassifier model.
+#     """
+
+#     DEVICE = torch.device("cuda" if torch.cuda.is_available() else "cpu")
+#     print(f"Using device: {DEVICE}")
+#     # 1. Initialize the population
+#     population = [SimpleClassifier().to(DEVICE) for _ in range(POPULATION_SIZE)]
+#     best_individual: Optional[SimpleClassifier] = None # type: ignore
+#     best_fitness = -float('inf')
+#     # Store the best fitness for each generation
+#     best_fitnesses = []
+#     # 2. Main evolutionary loop
+#     for generation in range(GENERATIONS):
+#         # 2.1 Evaluate the fitness of each individual in the population
+#         fitnesses = [evaluate_fitness(individual, train_loader) for individual in population]
+#         # 2.2 Print the best fitness in the current generation
+#         best_fitness_gen = max(fitnesses)
+#         best_fitnesses.append(best_fitness_gen)
+#         print(f"Generation {generation + 1}/{GENERATIONS} - Best Fitness: {best_fitness_gen:.4f}")
+
+#         # 2.3 Update the best individual found so far
+#         if best_fitness_gen > best_fitness:
+#             best_fitness = best_fitness_gen
+#             best_individual = population[fitnesses.index(best_fitness_gen)].clone()
+
+#         # 2.4 Perform selection, crossover, and mutation to create the next generation
+#         parents = select_parents(population, fitnesses)
+#         offspring = []
+#         for parent1, parent2 in parents:
+#             child = crossover(parent1, parent2, CROSSOVER_RATE)
+#             child = mutate(child, MUTATION_RATE)
+#             offspring.append(child.to(DEVICE))
+
+#         # 2.5 Elitism: Keep the top ELITISM_COUNT individuals from the previous generation
+#         # Sort the population by fitness (descending order)
+#         # Sort the population by the models fitness in descending order
+
+#         sorted_population = [p for _, p in sorted(zip(fitnesses, population), reverse=True)]
+#         elites = sorted_population[:ELITISM_COUNT]
+#         # Replace the least fit individuals in the offspring population with the elites
+#         offspring[-ELITISM_COUNT:] = elites
+
+#         population = offspring
+
+#         # 2.6 Evaluate the best individual on the validation set.
+#         if val_loader:
+#             val_fitness = evaluate_fitness(best_individual, val_loader)
+#             print(f"  Validation Fitness: {val_fitness:.4f}")
+#     print("Evolutionary process complete.")
+#     if best_individual is None:
+#         raise ValueError("No best individual found during evolution.")
+#     return best_individual
+
