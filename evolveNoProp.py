@@ -6,12 +6,12 @@ import numpy as np
 from typing import List, Tuple, Callable, Optional
 
 # Constants for the evolutionary algorithm
-POPULATION_SIZE = 100
-GENERATIONS = 400
+POPULATION_SIZE = 150
+GENERATIONS = 1000
 MUTATION_RATE = 0.15
 CROSSOVER_RATE = 0.7
-ELITISM_COUNT = 5  # Keep the top N individuals across generations
-TOURNAMENT_SIZE = 5  # Number of individuals to select for tournament selection
+ELITISM_COUNT = 10  # Keep the top N individuals across generations
+TOURNAMENT_SIZE = 8  # Number of individuals to select for tournament selection
 # Device to use (CPU or GPU)
 DEVICE = torch.device("cuda" if torch.cuda.is_available() else "cpu")
 
@@ -330,6 +330,7 @@ def evolve_population(train_loader: torch.utils.data.DataLoader,
                      val_loader: torch.utils.data.DataLoader) -> SimpleClassifier:
     device = torch.device("cuda:0" if torch.cuda.is_available() else "cpu")
     print(f"Using device: {device}")
+    generationFitnesses = []
     
     # Initialize population
     population = [SimpleClassifier().to(device) for _ in range(POPULATION_SIZE)]
@@ -353,6 +354,17 @@ def evolve_population(train_loader: torch.utils.data.DataLoader,
         if fitnesses[0] > best_fitness:
             best_fitness = fitnesses[0]
             best_individual = population[0].clone()
+            # Save the best individual state dict
+            if best_individual is not None:
+                # Ensure the best individual is on the correct device
+                best_individual = best_individual.to(device)
+                # Save the state dict of the best individual
+                if generation % 10 == 0:  # Save every 10 generations
+                    print(f"Saving best model at generation {generation + 1}")
+                    torch.save(best_individual.state_dict(), f"best_model_generation_{generation + 1}.pth")
+
+
+        generationFitnesses.append(best_fitness)
         
         print(f"Generation {generation + 1}/{GENERATIONS} - Best Fitness: {best_fitness:.4f}")
         
@@ -365,7 +377,7 @@ def evolve_population(train_loader: torch.utils.data.DataLoader,
         
         # Create pairs of parents
         random.shuffle(parents)
-        parent_pairs = [(parents[i], parents[i+1]) for i in range(0, len(parents), 2)]
+        parent_pairs = [(parents[i], parents[i+1]) for i in range(0, len(parents)-1, 2)]
         
         # Create new population through crossover and mutation
         new_population = []
@@ -382,7 +394,11 @@ def evolve_population(train_loader: torch.utils.data.DataLoader,
         # Optional: Add elitism by replacing the worst individual with the best from previous generation
         if best_individual is not None:
             population[-1] = best_individual.clone()
-    
+            
+    #save the array of fitness per generation to a csv
+    generationFitnesses = np.array(generationFitnesses)
+    generationFitnesses = generationFitnesses.reshape(-1, 1)
+    np.savetxt("generation_fitnesses.csv", generationFitnesses, delimiter=",")
     return best_individual
 
 
@@ -390,68 +406,4 @@ def evolve_population(train_loader: torch.utils.data.DataLoader,
 
 
 
-
-
-# def evolve_population(train_loader: torch.utils.data.DataLoader,
-#                         val_loader: torch.utils.data.DataLoader) -> SimpleClassifier:
-#     """
-#     Evolve a population of SimpleClassifier models to perform binary classification
-#     on the given training data.  Includes a validation set for monitoring
-#     performance and early stopping.
-#     Args:
-#         train_loader: DataLoader for the training data.
-#         val_loader:   DataLoader for the validation data.
-#     Returns:
-#         The best evolved SimpleClassifier model.
-#     """
-
-#     DEVICE = torch.device("cuda" if torch.cuda.is_available() else "cpu")
-#     print(f"Using device: {DEVICE}")
-#     # 1. Initialize the population
-#     population = [SimpleClassifier().to(DEVICE) for _ in range(POPULATION_SIZE)]
-#     best_individual: Optional[SimpleClassifier] = None # type: ignore
-#     best_fitness = -float('inf')
-#     # Store the best fitness for each generation
-#     best_fitnesses = []
-#     # 2. Main evolutionary loop
-#     for generation in range(GENERATIONS):
-#         # 2.1 Evaluate the fitness of each individual in the population
-#         fitnesses = [evaluate_fitness(individual, train_loader) for individual in population]
-#         # 2.2 Print the best fitness in the current generation
-#         best_fitness_gen = max(fitnesses)
-#         best_fitnesses.append(best_fitness_gen)
-#         print(f"Generation {generation + 1}/{GENERATIONS} - Best Fitness: {best_fitness_gen:.4f}")
-
-#         # 2.3 Update the best individual found so far
-#         if best_fitness_gen > best_fitness:
-#             best_fitness = best_fitness_gen
-#             best_individual = population[fitnesses.index(best_fitness_gen)].clone()
-
-#         # 2.4 Perform selection, crossover, and mutation to create the next generation
-#         parents = select_parents(population, fitnesses)
-#         offspring = []
-#         for parent1, parent2 in parents:
-#             child = crossover(parent1, parent2, CROSSOVER_RATE)
-#             child = mutate(child, MUTATION_RATE)
-#             offspring.append(child.to(DEVICE))
-
-#         # 2.5 Elitism: Keep the top ELITISM_COUNT individuals from the previous generation
-#         # Sort the population by fitness (descending order)
-#         # Sort the population by the models fitness in descending order
-
-#         sorted_population = [p for _, p in sorted(zip(fitnesses, population), reverse=True)]
-#         elites = sorted_population[:ELITISM_COUNT]
-#         # Replace the least fit individuals in the offspring population with the elites
-#         offspring[-ELITISM_COUNT:] = elites
-
-#         population = offspring
-
-#         # 2.6 Evaluate the best individual on the validation set.
-#         if val_loader:
-#             val_fitness = evaluate_fitness(best_individual, val_loader)
-#             print(f"  Validation Fitness: {val_fitness:.4f}")
-#     print("Evolutionary process complete.")
-#     if best_individual is None:
-#         raise ValueError("No best individual found during evolution.")
-#     return best_individual
 
