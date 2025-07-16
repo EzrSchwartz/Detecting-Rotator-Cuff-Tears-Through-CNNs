@@ -150,7 +150,7 @@ def train_step(model, optimizer, data, loss_fn, device):
 from Datasets import ShoulderDataLoader
 
 
-def train_unsupervised(model, num_epochs=25, batch_size=32, learning_rate=0.001):
+def train_unsupervised(model, num_epochs=100, batch_size=32, learning_rate=0.001):
     device = torch.device("cuda" if torch.cuda.is_available() else "cpu")
     model = model.to(device)
     
@@ -159,7 +159,8 @@ def train_unsupervised(model, num_epochs=25, batch_size=32, learning_rate=0.001)
     
     train_loader = ShoulderDataLoader(
         directory=R'D:\Shoulderaugmented',
-        batch_size=batch_size
+        batch_size=batch_size,
+        num_workers=4
     )
     
     model.train()
@@ -167,47 +168,42 @@ def train_unsupervised(model, num_epochs=25, batch_size=32, learning_rate=0.001)
         running_loss = 0.0
         batch_count = 0
         
-        try:
-            for batch in train_loader:
-                if len(batch.shape) != 5:
-                    print(f"Skipping batch with incorrect shape: {batch.shape}")
-                    continue
-                    
-                batch = batch.to(device)
+        for batch in train_loader:
+            # Ensure correct shape: [batch_size, channels, depth, height, width]
+            if len(batch.shape) != 5:
+                continue  # Skip malformed batches
                 
-                optimizer.zero_grad()
-                outputs = model(batch)
-                
-                target = torch.zeros_like(outputs).to(device)
-                target[:, 0] = 1.0
-                
-                loss = criterion(outputs, target)
-                loss.backward()
-                optimizer.step()
-                
-                running_loss += loss.item()
-                batch_count += 1
-                
-                if batch_count % 10 == 0:
-                    print(f'Epoch [{epoch+1}/{num_epochs}], '
-                          f'Batch [{batch_count}], '
-                          f'Loss: {loss.item():.4f}')
-                    
-        except Exception as e:
-            print(f"Error during training: {str(e)}")
-            continue
-        
-        if batch_count > 0:
-            epoch_loss = running_loss / batch_count
-            print(f'Epoch [{epoch+1}/{num_epochs}] complete, '
-                  f'Average Loss: {epoch_loss:.4f}')
+            batch = batch.to(device)
             
-            if (epoch + 1) % 5 == 0:
-                torch.save({
-                    'epoch': epoch + 1,
-                    'model_state_dict': model.state_dict(),
-                    'optimizer_state_dict': optimizer.state_dict(),
-                    'loss': epoch_loss,
-                }, f'unsupervised_checkpoint_epoch_{epoch+1}.pth')
+            optimizer.zero_grad()
+            outputs = model(batch)
+            
+            # Define target
+            target = torch.zeros_like(outputs).to(device)
+            target[:, 0] = 1.0
+            
+            loss = criterion(outputs, target)
+            loss.backward()
+            optimizer.step()
+            
+            running_loss += loss.item()
+            batch_count += 1
+            
+            if batch_count % 10 == 0:
+                print(f'Epoch [{epoch+1}/{num_epochs}], '
+                      f'Batch [{batch_count}], '
+                      f'Loss: {loss.item():.4f}')
+        
+        epoch_loss = running_loss / batch_count
+        print(f'Epoch [{epoch+1}/{num_epochs}] complete, '
+              f'Average Loss: {epoch_loss:.4f}')
+        
+        if (epoch + 1) % 10 == 0:
+            torch.save({
+                'epoch': epoch + 1,
+                'model_state_dict': model.state_dict(),
+                'optimizer_state_dict': optimizer.state_dict(),
+                'loss': epoch_loss,
+            }, f'unsupervised_checkpoint_epoch_{epoch+1}.pth')
 
 
