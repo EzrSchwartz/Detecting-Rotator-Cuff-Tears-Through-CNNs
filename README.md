@@ -8,11 +8,13 @@ Rotator Cuff Tears are common, especially among the physically active population
 Through the use of machine learning, a convolutional neural network (CNN) could improve the diagnosis of rotator cuff tears and possibly classify them by tear type dependent solely on a MRI. These models are commonly used for medical images due to capturing simple structures in early layers but then more complex patterns in later layers. MRIs are well suited for transfer learning since the CNN trains on more commonly available datasets for the early model and beginning layers but then uses more injury-specific images for the later layers. Previously, CNNs have been utilized in musculoskeletal radiology to detect abnormalities such as knee osteoarthritis. It has been shown that a CNN model achieved approximately 97% accuracy in early detection and classification across all four Kellgren–Lawrence grades (Mahum, 2021). There are limited studies improving the diagnosis of rotator cuff tears, this is most likely due to the lack of publicly available data. In one study using a CNN for rotator cuff tears, the authors focused on the use of a 3D CNN (Shim et al., 2020). The framework utilized volumetric medical imaging data as input, allowing the model to analyze spatial features across multiple planes. By processing these 3D inputs, the CNN could capture complex patterns associated with different types and sizes of rotator cuff tears. The model's architecture using the Voxception-ResNet (VRN) enabled it to not only identify the existence of a tear but also assess its severity and precise anatomical location, which are critical factors in determining appropriate treatment strategies.
 
 ![Figure 1: Architecture of the Voxception-ResNet (VRN) used in prior study (Shim et al., 2020).](/figures/figure1.png)
+
 Figure 1: Architecture of the Voxception-ResNet (VRN) used in prior study (Shim et al., 2020).
 
 Through this method, the authors were able to achieve an average accuracy of 69% using LOCV (leave-one-out-cross-validation). It should be noted however that when the authors filtered their predictions to include if the result was ± 1 level of accuracy, their accuracy increased to 87.5% which is a significant improvement but was also increased with which is consistent with the diagnostic performance of the top radiologists using contrast-enhanced MR arthrography, a more costly, painful, and invasive procedure (Table 1) (Shim et al., 2020). This accuracy is a small improvement over the accuracy of radiologists when evaluating MRI images; however, the improvement is minimal and a more robust model is needed.
 
 ![Table 1: Statistics on accuracy of detecting rotator cuff tears and their severity (Shim et al., 2020).](/figures/table1.png)
+
 Table 1: Statistics on accuracy of detecting rotator cuff tears and their severity (Shim et al., 2020).
 
 ### Transfer Learning: A solution to small datasets
@@ -21,6 +23,7 @@ Transfer learning is a machine learning technique, in which a model developed fo
   Given the high need to improve accuracy of rotator cuff tears, there is a need for a CNN developed using a larger data set as well as the power of using transfer learning to optimize the algorithm. This study will develop different neural networks to approach the problem of classifying and detecting rotator cuff tears. It will compare transfer learning from the ball and socket in the hip, grouped transfer learning where the encoder is trained on the hip socket as well as the muscle tear dataset, double transfer learning from the hip socket and then muscle tears in general, compared to the use of training from an initialization model (traditional learning) to classify and aid in the diagnosis process (Figure 2). Accuracy will be compared to the previous study done by Shim et al. (2020) which used a non-transfer learning 3D Voxception-ResNet. It is anticipated that using musculoskeletal structures of the hip for transfer learning will increase the accuracy and sensitivity greater than the 69% currently achieved and double transfer should increase the accuracy even more. (Figure 2) 
   
 ![Figure 2: Proposed hypothesis and general study design of model variations](/figures/figure2.png)
+
 Figure 2: Proposed hypothesis and general study design of model variations
 
 ## Implications
@@ -35,6 +38,7 @@ This project aims to create a convolutional neural network (CNN) that can increa
 This study proposes the usage of CNNs with transfer learning from the MRNet dataset and the hip socket in an effort to better identify rotator cuff tears of the shoulder. Different styles of machine learning will be used including transfer learning, double transfer learning, and learning from initialization. A study by Salehi et al. (2023) highlights the advantages of CNNs and transfer learning in medical imaging, noting their ability to improve accuracy and reduce the need for extensive datasets. Through the usage of transfer learning on images of the MRNet dataset, it will increase the accuracy and sensitivity of transfer learning from the hip socket MRI scans. This study also plans to evaluate four methodologies to create a diagnostic algorithm: no transfer learning (control), transfer learning labrum tears of the hip, double transfer learning of MRNet dataset to rotator cuff MRIs, and traditional training from initialization on a large data set (Figure 3). All of these methods will be performed in an unsupervised environment so that the algorithm can detect small variances on its own and have the ability to surpass the radiologist’s accuracy. 
 
 ![Fig 3: Traditional process of learning from a large dataset](/figures/figure3.png)
+
 Fig 3: Traditional process of learning from a large dataset
 
 This project will train and compare multiple models using the same set of MRI images, each using different machine-learning strategies to assess their effectiveness in detecting rotator cuff tears. The baseline (control) model will be the architecture proposed in Shim et al. (2020) where the algorithm using 1,924 MRI scans was trained through the VRN. Their success was a 69% accuracy when they took the entire datasets, and when they assessed their results by seeing what percentage were within 1 classification level of being correct they got an accuracy of 87%. The second model will incorporate transfer learning from hip socket MRI scans and muscle tears in general, hypothesizing that the anatomical similarities between the hip socket and the shoulder socket will yield better initial features than that found by Shim et al. (Fig. 4) A third model will utilize a single transfer learning approach using just transfer learning from the hip socket MRI data before fine-tuning on rotator cuff-specific images. This strategy aims to merge general structural insights from hip data. A final test to compare network frameworks will be using a model which was trained from initialization. This is traditional learning with a large rotator cuff dataset (Fig. 3). By comparing these models, the study will determine which transfer learning method results in the highest diagnostic accuracy, precision, recall, and F1 score. This research builds on prior work that used VRN’s trained from initialization, proposing that musculoskeletal pre-training may provide greater benefits. The findings could ultimately improve the non-invasive diagnosis of rotator cuff tears.
@@ -43,6 +47,7 @@ This project will train and compare multiple models using the same set of MRI im
 
 
 ![Fig 4: Flow chart of proposed single transfer learning using UNet to create initial encoder through sequential double transfer learning](/figures/figure4.png)
+
 Fig 4: Flow chart of proposed single transfer learning using UNet to create initial encoder through sequential double transfer learning
 
 Model Architecture
@@ -51,9 +56,11 @@ In this study, all of the final models will be developed as classification to de
 
 
 ![Figure. 5: UNet architecture commonly used for image segmentation. (Geeks for Geeks)](/figures/figure5.png)
+
 Figure. 5: UNet architecture commonly used for image segmentation. (Geeks for Geeks)
 
 ![Fig.6: Visual representation of ResNet50 Architecture with annotations (Mukherjee, 2022) classification](/figures/figure6.png)
+
 Fig.6: Visual representation of ResNet50 Architecture with annotations (Mukherjee, 2022) classification
 
 The transfer learning modules will be developed through training a UNet encoder and decoder. This process will allow the network to establish a representation of muscle tears in the encoder. This is helpful due to the classification dataset being too small which normally would cause overfitting, one potential setback to this is that the domain gap of the transfer model data to the classification dataset may be too large leading to transfer learning being ineffective. This is why training on similar anatomical locations and tears makes sense. The model will be trained, unsupervised, on (4000) muscle tear and (4000)hip socket images. This includes the Stanford ACL tear dataset (1,370 samples), the rotator cuff tear data from Kim (2,447 samples), and KneeMRI (947 samples). The hip images are obtained through the NHI database. In addition to this previous benchmark, this study will develop a single transfer learning network utilizing the  the ResNet50 architecture for the classification section and utilizing the previous approach of the UNet for the transfer model but only training on MRI scans of the hip socket for the initial layers and then transferring to the rotator cuff to test whether isolating the similar anatomical structures is superior for the transfer learning. The hip is the only other ball and socket joint which means it is the only other place we can find these patterns and structures. Using this for transfer learning should yield better results due to similar anatomical structures and features. 
@@ -119,9 +126,11 @@ End to end training (Accuracy = 79%) has outperformed the predicted double trans
 
 
 ![Table 2: This studies results and accuracy compared to prior studies.](/figures/table2.png)
+
 Table 2: This studies results and accuracy compared to prior studies.
 
 ![Graph 1: Comparing accuracy of models](/figures/graph1.png)
+
 Graph 1: Comparing the accuracy of models
 
 ## Discussion (Graph 1)
